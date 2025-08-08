@@ -1,2 +1,1 @@
-# sm-downloader
 All-in-one social media content downloader for TikTok, Instagram, X (Twitter), and Snapchat. Download videos, images, and stories with a clean web interface and REST API. Built with Python/React, supports batch processing, high-quality downloads, and Docker deployment. Privacy-focused with local processing and no data collection.
