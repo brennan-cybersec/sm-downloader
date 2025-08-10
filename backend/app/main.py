@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import main as main_router
+from app.database_init import init_db
 import os
 
 app = FastAPI(
@@ -20,6 +21,11 @@ app.add_middleware(
 
 # Include routers
 app.include_router(main_router.router, prefix="/api/v1")
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database on startup"""
+    init_db()
 
 @app.get("/")
 async def root():

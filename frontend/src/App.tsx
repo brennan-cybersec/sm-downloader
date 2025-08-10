@@ -16,7 +16,8 @@ import {
   Switch,
   FormControlLabel,
   Button,
-  Chip
+  Chip,
+  CircularProgress
 } from '@mui/material'
 import { 
   Download, 
@@ -38,6 +39,9 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom'
 import DownloadPage from './pages/DownloadPage'
 import HistoryPage from './pages/HistoryPage'
+import AuthPage from './pages/auth/AuthPage'
+import ProfileManager from './components/auth/ProfileManager'
+import { useAuth } from './contexts/AuthContext'
 
 const drawerWidth = 280
 
@@ -47,10 +51,12 @@ function App() {
   const [mobileOpen, setMobileOpen] = React.useState(false)
   const [darkMode, setDarkMode] = React.useState(true)
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false)
+  const { user, isAuthenticated, isLoading } = useAuth()
 
   const menuItems = [
     { text: 'Download', icon: <Download />, path: '/' },
     { text: 'History', icon: <History />, path: '/history' },
+    ...(user ? [{ text: 'Profile', icon: <Person />, path: '/profile' }] : []),
   ]
 
   const handleDrawerToggle = () => {
@@ -82,25 +88,42 @@ function App() {
             }
           }}
         >
-          <Download sx={{ fontSize: 30, color: 'white' }} />
+          {user ? user.username.charAt(0).toUpperCase() : <Download sx={{ fontSize: 30, color: 'white' }} />}
         </Avatar>
         <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 0.5 }}>
-          Kozy
+          {user ? user.username : 'Guest'}
         </Typography>
         <Typography variant="body2" sx={{ color: '#999', mb: 2 }}>
-          Joined 10.09.2023
+          {user ? `Joined ${user.joinDate}` : 'Not signed in'}
         </Typography>
-        <Button
-          variant="text"
-          size="small"
-          sx={{ 
-            color: '#4CAF50', 
-            textTransform: 'none',
-            '&:hover': { bgcolor: 'rgba(76, 175, 80, 0.1)' }
-          }}
-        >
-          Edit profile
-        </Button>
+        {user ? (
+          <Button
+            variant="text"
+            size="small"
+            onClick={() => navigate('/profile')}
+            sx={{ 
+              color: '#4CAF50', 
+              textTransform: 'none',
+              '&:hover': { bgcolor: 'rgba(76, 175, 80, 0.1)' }
+            }}
+          >
+            Edit profile
+          </Button>
+        ) : (
+          <Button
+            variant="contained"
+            size="small"
+            onClick={() => navigate('/auth')}
+            sx={{ 
+              bgcolor: '#4CAF50',
+              color: 'white',
+              textTransform: 'none',
+              '&:hover': { bgcolor: '#2E7D32' }
+            }}
+          >
+            Sign In
+          </Button>
+        )}
       </Box>
 
       {/* Download App Section */}
@@ -120,27 +143,35 @@ function App() {
       </Box>
 
       {/* Subscription Section */}
-      <Box sx={{ p: 2, borderBottom: '1px solid #333' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Typography variant="body2" sx={{ color: 'white' }}>
-            Subscription
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#4CAF50' }}>
-            Free plan
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-          <Box sx={{ flex: 1, height: 4, bgcolor: '#333', borderRadius: 2, overflow: 'hidden' }}>
-            <Box sx={{ width: '100%', height: '100%', bgcolor: 'white' }} />
+      {user && (
+        <Box sx={{ p: 2, borderBottom: '1px solid #333' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography variant="body2" sx={{ color: 'white' }}>
+              Subscription
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#4CAF50' }}>
+              {user.subscription === 'premium' ? 'Premium' : 'Free plan'}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <Box sx={{ flex: 1, height: 4, bgcolor: '#333', borderRadius: 2, overflow: 'hidden' }}>
+              <Box 
+                sx={{ 
+                  width: `${(user.downloadsUsed / user.downloadsLimit) * 100}%`, 
+                  height: '100%', 
+                  bgcolor: user.subscription === 'premium' ? '#4CAF50' : 'white' 
+                }} 
+              />
+            </Box>
+            <Typography variant="caption" sx={{ color: '#999' }}>
+              {user.downloadsUsed} of {user.downloadsLimit}
+            </Typography>
           </Box>
           <Typography variant="caption" sx={{ color: '#999' }}>
-            25 of 25
+            downloads used
           </Typography>
         </Box>
-        <Typography variant="caption" sx={{ color: '#999' }}>
-          downloads used
-        </Typography>
-      </Box>
+      )}
 
       {/* Try Membership Section */}
       <Box sx={{ p: 2, borderBottom: '1px solid #333' }}>
@@ -254,6 +285,20 @@ function App() {
       </List>
     </Box>
   )
+
+  if (isLoading) {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '100vh', 
+        bgcolor: '#1A1A1A' 
+      }}>
+        <CircularProgress size={60} sx={{ color: '#4CAF50' }} />
+      </Box>
+    )
+  }
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#1A1A1A' }}>
@@ -383,6 +428,8 @@ function App() {
         <Routes>
           <Route path="/" element={<DownloadPage sidebarOpen={!sidebarCollapsed} />} />
           <Route path="/history" element={<HistoryPage />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/profile" element={<ProfileManager />} />
         </Routes>
       </Box>
     </Box>
